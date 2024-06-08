@@ -4,7 +4,6 @@ import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:livermore/logger.dart';
 import 'package:livermore/screens/home/state.dart';
 import 'package:timer_count_down/timer_controller.dart';
 import 'package:timer_count_down/timer_count_down.dart';
@@ -18,12 +17,14 @@ import '../pkg/common/chart_data.dart';
 import '../pkg/common/k_chart_data_source.dart';
 import '../pkg/widget/bs_point_widget.dart';
 import '../pkg/widget/k_chart_widget.dart';
-import 'trade/base_info_banner.dart';
-import 'trade/trading_result_dialog.dart';
-import 'trade/trading_results_banner.dart';
+import 'trading/base_info_banner.dart';
 import 'trading/state.dart';
+import 'trading/trading_result_dialog.dart';
+import 'trading/trading_results_banner.dart';
 
 const int N = 40; // 可参考数量
+
+const style = TextStyle(color: Colors.white, fontSize: 16);
 
 class TradingScreen extends ConsumerStatefulWidget {
   const TradingScreen({super.key});
@@ -314,16 +315,13 @@ class _TradingScreenState extends ConsumerState<TradingScreen> {
       data: (entry) {
         if (entry.kLines.length < N + 30 ||
             entry.stockName.startsWith('ST') ||
+            entry.prePrice < 3 ||
             entry.stockName.startsWith('XD') ||
             entry.stockName.startsWith('*')) {
           ref.refresh(trainDataFutureProvider.future);
-          return Align(
-            alignment: Alignment.center,
-            child: CircularProgressIndicator(
-              backgroundColor: Colors.white,
-              valueColor:
-                  AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
-            ),
+          return const ColoredBox(
+            color: Colors.white,
+            child: Center(child: CircularProgressIndicator()),
           );
         } else {
           _trainData = entry;
@@ -339,8 +337,16 @@ class _TradingScreenState extends ConsumerState<TradingScreen> {
                   ),
                   title: Row(
                     children: [
-                      const Text('模拟交易进行中...',
-                          style: TextStyle(color: Colors.white, fontSize: 16)),
+                      const Text('模拟交易进行中...', style: style),
+                      const Spacer(),
+                      Column(
+                        children: [
+                          const Text('天数',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 14)),
+                          Text('$_currentDay/$_total', style: style)
+                        ],
+                      ),
                       const Spacer(),
                       Column(children: [
                         const Text('倒计时',
@@ -351,25 +357,12 @@ class _TradingScreenState extends ConsumerState<TradingScreen> {
                           seconds: _duration,
                           build: (_, double time) => Text(
                             "${time.toInt()}",
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 16),
+                            style: style,
                           ),
                           onFinished: () => goToNextTradingDay(),
                           // onFinished: () => {},
                         ),
                       ]),
-                      const Spacer(),
-                      Column(
-                        children: [
-                          const Text('天数',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 14)),
-                          Text('$_currentDay/$_total',
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 16))
-                        ],
-                      ),
-                      const Spacer(),
                     ],
                   )),
               body: PopScope(
@@ -399,7 +392,7 @@ class _TradingScreenState extends ConsumerState<TradingScreen> {
                                           20, 12, 20, 12)),
                                   backgroundColor:
                                       WidgetStateProperty.all<Color>(
-                                    Colors.green,
+                                    Colors.deepPurpleAccent,
                                   ),
                                   shape: WidgetStateProperty.all<
                                       RoundedRectangleBorder>(
@@ -408,31 +401,8 @@ class _TradingScreenState extends ConsumerState<TradingScreen> {
                                     ),
                                   )),
                               onPressed: () => complete(),
-                              child: const Text('结算',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 16)),
+                              child: const Text('结算', style: style),
                             ),
-                            // const Spacer(),
-                            // TextButton(
-                            //     style: ButtonStyle(
-                            //         padding:
-                            //             WidgetStateProperty.all<EdgeInsets>(
-                            //                 const EdgeInsets.fromLTRB(
-                            //                     20, 12, 20, 12)),
-                            //         backgroundColor:
-                            //             WidgetStateProperty.all<Color>(
-                            //           Colors.deepPurpleAccent,
-                            //         ),
-                            //         shape: WidgetStateProperty.all<
-                            //             RoundedRectangleBorder>(
-                            //           RoundedRectangleBorder(
-                            //             borderRadius: BorderRadius.circular(8),
-                            //           ),
-                            //         )),
-                            //     onPressed: () => goToNextTradingDay(),
-                            //     child: Text(_purchased ? '持有' : '观望',
-                            //         style: const TextStyle(
-                            //             color: Colors.white, fontSize: 16))),
                             const Spacer(),
                             TextButton(
                                 style: ButtonStyle(
@@ -442,7 +412,7 @@ class _TradingScreenState extends ConsumerState<TradingScreen> {
                                                 20, 12, 20, 12)),
                                     backgroundColor:
                                         WidgetStateProperty.all<Color>(
-                                      _purchased ? Colors.blue : Colors.red,
+                                      !_purchased ? Colors.grey : Colors.green,
                                     ),
                                     shape: WidgetStateProperty.all<
                                         RoundedRectangleBorder>(
@@ -450,11 +420,31 @@ class _TradingScreenState extends ConsumerState<TradingScreen> {
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                     )),
-                                onPressed: () => goToNextTradingDay(
-                                    buy: !_purchased, sell: _purchased),
-                                child: Text(_purchased ? '卖出' : '买入',
-                                    style: const TextStyle(
-                                        color: Colors.white, fontSize: 16))),
+                                onPressed: () => _purchased
+                                    ? goToNextTradingDay(sell: true)
+                                    : null,
+                                child: const Text('卖出', style: style)),
+                            const Spacer(),
+                            TextButton(
+                                style: ButtonStyle(
+                                    padding:
+                                        WidgetStateProperty.all<EdgeInsets>(
+                                            const EdgeInsets.fromLTRB(
+                                                20, 12, 20, 12)),
+                                    backgroundColor:
+                                        WidgetStateProperty.all<Color>(
+                                      _purchased ? Colors.grey : Colors.red,
+                                    ),
+                                    shape: WidgetStateProperty.all<
+                                        RoundedRectangleBorder>(
+                                      RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    )),
+                                onPressed: () => !_purchased
+                                    ? goToNextTradingDay(buy: true)
+                                    : null,
+                                child: const Text('买入', style: style)),
                           ],
                         ),
                         const SizedBox(height: 20),
@@ -475,7 +465,6 @@ class _TradingScreenState extends ConsumerState<TradingScreen> {
         }
       },
       error: (e, s) {
-        logger.d(e.toString(), error: e, stackTrace: s);
         return Align(
           alignment: Alignment.center,
           child: Text(
@@ -484,13 +473,9 @@ class _TradingScreenState extends ConsumerState<TradingScreen> {
           ),
         );
       },
-      loading: () => Align(
-        alignment: Alignment.center,
-        child: CircularProgressIndicator(
-          backgroundColor: Colors.white,
-          valueColor:
-              AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
-        ),
+      loading: () => const ColoredBox(
+        color: Colors.white,
+        child: Center(child: CircularProgressIndicator()),
       ),
     );
   }

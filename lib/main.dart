@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import './screens/home.dart';
-import 'screens/loading_screen.dart';
 import 'screens/trading.dart';
 import 'version.dart';
 
@@ -24,10 +23,6 @@ class MyApp extends StatelessWidget {
         path: '/',
         builder: (_, __) => const HomePage(),
         routes: [
-          GoRoute(
-            path: 'loading',
-            builder: (_, __) => const LoadingScreen(),
-          ),
           GoRoute(
             path: 'trading',
             builder: (_, __) => const TradingScreen(),

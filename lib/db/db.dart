@@ -37,6 +37,14 @@ class AppDatabase extends _$AppDatabase {
         .watch();
   }
 
+  // 贝壳数量变化
+  Stream<List<double>> coinsEndList() {
+    final coinsEnd = trainingRecords.coinsEnd;
+    final query = selectOnly(trainingRecords, distinct: true)
+      ..addColumns([trainingRecords.coinsEnd]);
+    return query.map((e) => e.read(coinsEnd) as double).watch();
+  }
+
   static final StateProvider<AppDatabase> provider = StateProvider((ref) {
     final database = AppDatabase();
     ref.onDispose(database.close);

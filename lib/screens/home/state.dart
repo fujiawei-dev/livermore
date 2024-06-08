@@ -15,3 +15,9 @@ final recentTrainingRecords = StreamProvider((ref) {
 });
 
 double currentCoins = 10000.0;
+
+final coinsList = StreamProvider((ref) {
+  final database = ref.watch(AppDatabase.provider);
+
+  return database.coinsEndList();
+});
